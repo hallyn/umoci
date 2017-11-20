@@ -23,6 +23,7 @@ import (
 	"github.com/apex/log"
 	"github.com/openSUSE/umoci/oci/cas/dir"
 	"github.com/openSUSE/umoci/oci/casext"
+	umoci "github.com/openSUSE/umoci/api"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
@@ -148,22 +149,13 @@ line. See umoci-stat(1) to get more information about each tagged image.`,
 
 func tagList(ctx *cli.Context) error {
 	imagePath := ctx.App.Metadata["--image-path"].(string)
-
-	// Get a reference to the CAS.
-	engine, err := dir.Open(imagePath)
+	layout, err := umoci.Layout(imagePath)
 	if err != nil {
-		return errors.Wrap(err, "open CAS")
-	}
-	engineExt := casext.NewEngine(engine)
-	defer engine.Close()
-
-	names, err := engineExt.ListReferences(context.Background())
-	if err != nil {
-		return errors.Wrap(err, "list references")
+		return err
 	}
 
-	for _, name := range names {
-		fmt.Println(name)
+	for _, tag := range layout.Tags {
+		fmt.Println(tag)
 	}
 	return nil
 }
