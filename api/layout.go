@@ -37,7 +37,6 @@ func (l *Layout) ListTags() ([]string, error) {
 }
 
 func (l *Layout) AddTag(old, tag string) error {
-	// Get original descriptor.
 	engineExt := casext.NewEngine(l.engine)
 	descriptorPaths, err := engineExt.ResolveReference(context.Background(), old)
 	if err != nil {
@@ -60,10 +59,18 @@ func (l *Layout) AddTag(old, tag string) error {
 		return errors.Errorf("new tag already exists: %s", tag)
 	}
 
-	// Add it.
 	if err := engineExt.UpdateReference(context.Background(), tag, descriptor); err != nil {
 		return errors.Wrap(err, "put reference")
 	}
 
+	return nil
+}
+
+func (l *Layout) RmTag(tag string) error {
+	engineExt := casext.NewEngine(l.engine)
+
+	if err := engineExt.DeleteReference(context.Background(), tag); err != nil {
+		return errors.Wrap(err, "delete reference")
+	}
 	return nil
 }

@@ -21,12 +21,9 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
-	"github.com/openSUSE/umoci/oci/cas/dir"
-	"github.com/openSUSE/umoci/oci/casext"
 	umoci "github.com/openSUSE/umoci/api"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"golang.org/x/net/context"
 )
 
 var tagAddCommand = cli.Command{
@@ -96,17 +93,14 @@ func tagRemove(ctx *cli.Context) error {
 	imagePath := ctx.App.Metadata["--image-path"].(string)
 	tagName := ctx.App.Metadata["--image-tag"].(string)
 
-	// Get a reference to the CAS.
-	engine, err := dir.Open(imagePath)
+	layout, err := umoci.OpenLayout(imagePath)
 	if err != nil {
-		return errors.Wrap(err, "open CAS")
+		return err
 	}
-	engineExt := casext.NewEngine(engine)
-	defer engine.Close()
+	defer layout.Close()
 
-	// Remove it.
-	if err := engineExt.DeleteReference(context.Background(), tagName); err != nil {
-		return errors.Wrap(err, "delete reference")
+	if err = layout.RmTag(tagName); err != nil {
+		return err
 	}
 
 	log.Infof("removed tag: %s", tagName)
