@@ -149,7 +149,7 @@ line. See umoci-stat(1) to get more information about each tagged image.`,
 
 func tagList(ctx *cli.Context) error {
 	imagePath := ctx.App.Metadata["--image-path"].(string)
-	layout, err := umoci.Layout(imagePath)
+	layout, err := umoci.OpenLayout(imagePath)
 	if err != nil {
 		return err
 	}
