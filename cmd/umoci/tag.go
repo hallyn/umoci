@@ -61,32 +61,15 @@ func tagAdd(ctx *cli.Context) error {
 	imagePath := ctx.App.Metadata["--image-path"].(string)
 	fromName := ctx.App.Metadata["--image-tag"].(string)
 	tagName := ctx.App.Metadata["new-tag"].(string)
-
-	// Get a reference to the CAS.
-	engine, err := dir.Open(imagePath)
+	layout, err := umoci.OpenLayout(imagePath)
 	if err != nil {
-		return errors.Wrap(err, "open CAS")
+		return err
 	}
-	engineExt := casext.NewEngine(engine)
-	defer engine.Close()
+        defer layout.Close()
 
-	// Get original descriptor.
-	descriptorPaths, err := engineExt.ResolveReference(context.Background(), fromName)
+	err = layout.AddTag(fromName, tagName)
 	if err != nil {
-		return errors.Wrap(err, "get descriptor")
-	}
-	if len(descriptorPaths) == 0 {
-		return errors.Errorf("tag not found: %s", fromName)
-	}
-	if len(descriptorPaths) != 1 {
-		// TODO: Handle this more nicely.
-		return errors.Errorf("tag is ambiguous: %s", fromName)
-	}
-	descriptor := descriptorPaths[0].Descriptor()
-
-	// Add it.
-	if err := engineExt.UpdateReference(context.Background(), tagName, descriptor); err != nil {
-		return errors.Wrap(err, "put reference")
+		return err
 	}
 
 	log.Infof("created new tag: %q -> %q", tagName, fromName)
@@ -153,8 +136,13 @@ func tagList(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer layout.Close()
 
-	for _, tag := range layout.Tags {
+	names, err := layout.ListTags()
+	if err != nil {
+		return err
+	}
+	for _, tag := range names {
 		fmt.Println(tag)
 	}
 	return nil
